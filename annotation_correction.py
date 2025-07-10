@@ -166,8 +166,8 @@ def load_sample(session_state, selected_sample):
             elif selected_sample in discarded_dict.keys():
                 ann_file_path = get_gdrive_csv_path(drive, discarded_dict[selected_sample], ann_dir, selected_sample)
 
-        except Exception:
-            st.error(f"⚠️ Hubo un problema al descargar el archivo CSV para el sample '{selected_sample}'. Notifica al administrador.")
+        except Exception as e:
+            st.error(f"⚠️ Hubo un problema al descargar el archivo CSV para el sample '{selected_sample}'. Notifica al administrador.\n{e}")
             return -1
 
     # Process the image and the CSV file
