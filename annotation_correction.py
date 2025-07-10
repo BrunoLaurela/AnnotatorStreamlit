@@ -26,7 +26,8 @@ anns_toreview_dir = 'anotaciones_a_revisar'
 anns_done_dir = 'anotaciones_ok'
 anns_discarded_dir = 'anotaciones_descartadas'
 
-path_to_json_key = "pydrive_credentials.json"
+#path_to_json_key = "pydrive_credentials.json"
+path_to_json_key = 'anotadorstreamlit.json'
 
 def setup_drive(session_state):
     try:
@@ -36,10 +37,10 @@ def setup_drive(session_state):
         return -1
 
     # (optional) Get parent folder ID from secrets
-    parent_folder_id = st.secrets["google_drive"].get("parent_folder_id", None)
+    #parent_folder_id = st.secrets["google_drive"].get("parent_folder_id", None)
 
     folder_dict, todo_dict, toreview_dict, done_dict, discarded_dict = \
-        get_dicts(drive, anns_todo_dir, anns_toreview_dir, anns_done_dir, anns_discarded_dir, parent_folder_id)
+        get_dicts(drive, anns_todo_dir, anns_toreview_dir, anns_done_dir, anns_discarded_dir)
 
     session_state['drive'] = drive
     session_state['todo_dict'] = todo_dict
@@ -104,6 +105,10 @@ def load_sample(session_state, selected_sample):
     img_path = None
     ann_file_path = f"{ann_dir}/{selected_sample}.csv"
 
+    print(f"Selected sample: {selected_sample}")
+    print(f"ann_file_path: {ann_file_path}")
+    print(f"ann_dir: {ann_dir}")
+
     # Verify if the image is already downloaded
     for file in os.listdir(image_dir):
         if os.path.splitext(file)[0].strip() == selected_sample.strip():
@@ -117,6 +122,9 @@ def load_sample(session_state, selected_sample):
         toreview_dict = session_state['toreview_dict']
         done_dict = session_state['done_dict']
         discarded_dict = session_state['discarded_dict']
+    
+        print(f"🗃️ Archivos asociados: f{todo_dict.keys()}")
+
 
         try:
             if selected_sample in todo_dict.keys():
@@ -134,7 +142,7 @@ def load_sample(session_state, selected_sample):
         except Exception:
             st.error(f"⚠️ Hubo un problema al descargar la imagen para el sample '{selected_sample}'. Notifica al administrador.")
             return -1
-
+    #print(f"Image path: {img_path} ", f"type image path{type(img_path)}")
     # Verify if the CSV file exists and is not empty
     if not os.path.exists(ann_file_path) or os.stat(ann_file_path).st_size == 0:
         drive = session_state['drive']
@@ -293,8 +301,25 @@ def ann_correction(session_state):
     st.sidebar.header("Anotación de imágenes")
     with st.sidebar:
         # Hardcode the category to 'HER2/neu' and disable the selectbox
-        category = 'HER2/neu'
-        st.selectbox("Marcador:", [category], index=0, disabled=True)  # Disabled selectbox
+        categories = ['HER2/neu', 'Ki67/ER/PR', 'Intensidad por IHC']
+        label_lists = {
+            'Ki67/ER/PR': ['Positivo', 'Negativo', 'No importante'],
+            'Intensidad por IHC': ['+', '++', '+++'],
+            'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
+        }
+        category_colors = {
+            'HER2/neu': her2_colors,
+            'Ki67/ER/PR': Ki67_colors,
+            'Intensidad por IHC': ERPR_colors
+        }
+
+        # Sidebar selectbox habilitado
+        category = st.selectbox("Marcador:", categories,index=0,)
+        label_list = label_lists[category]
+        colors = category_colors[category]
+        #category = 'HER2/neu'
+        #category = st.selectbox("Seleccioná la categoría de anotación:", categories)
+        #st.selectbox("Marcador:", [category], index=0, disabled=True)  # Disabled selectbox
 
         # Calculate the number of samples in each state
         todo_count = len(session_state.get('todo_samples', []))
@@ -445,6 +470,7 @@ def ann_correction(session_state):
                     f"{label} ({len(sorted_samples)}):", 
                     sorted_samples
                 )
+                print(f"Selected sample option: {selected_sample_option}")
                 if selected_sample_option:
                     selected_sample = selected_sample_option.split(' ', 1)[0]
             else:
@@ -539,7 +565,7 @@ def ann_correction(session_state):
 
             # Update results
             base_name = os.path.splitext(image_file_name)[0]
-            update_results(session_state, all_points, all_labels, base_name)
+            update_results(session_state, all_points, all_labels, base_name,label_list)
             # update_ann_image(session_state, all_points, all_labels, image)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

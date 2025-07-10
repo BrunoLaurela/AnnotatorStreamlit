@@ -17,17 +17,28 @@ ann_dir    = "./annotations"
 report_dir = "./reports"
 
 # Define label list
-categories = ['Ki67', 'Estrógeno', 'Progesterona', 'HER2/neu']
+categories = ['HER2/neu','Ki67/ER/PR', 'Intensidad por IHC'] #'Ki67 / ER / PR', 'Intensidad por IHC', 
 label_lists = {
-    'Ki67': ['Positivo', 'Negativo', 'No importante'],
-    'Estrógeno': ['Positivo', 'Negativo', 'No importante'],
-    'Progesterona': ['Positivo', 'Negativo', 'No importante'],
+    'Ki67/ER/PR': ['Positivo', 'Negativo', 'No importante'],
+    'Intensidad por IHC': ['+', '++', '+++'],
+    #'Progesterona': ['Positivo', 'Negativo', 'No importante'],
     'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
 }
-label_list = label_lists['HER2/neu']
+
+#label_list = label_lists[category]
 
 actions = ['Agregar', 'Borrar']
-
+Ki67_colors = [
+    "#FF0000",  # Positivo (Rojo)
+    "#00FF00",  # Negativo (Verde)
+    "#167AAC"   # No importante (azul)
+]
+ERPR_colors = [
+    "#A2E700", # + (verdoso)
+    "#F06D17",  # ++ (naranja) 
+    "#FF0000"  # +++ (Rojo)
+       
+]
 her2_colors = [
     "#FF0000",  # Completa 3+ (Rojo)
     "#FF00FF",  # Completa 2+ (Fucsia)
@@ -63,7 +74,7 @@ def update_patch_data(session_state, all_points, all_labels):
     session_state['labels'] = labels
 
 
-def update_results(session_state, all_points, all_labels, file_name):
+def update_results(session_state, all_points, all_labels, file_name,label_list):
 
     points = list(all_points)
     labels = [all_labels[point] for point in all_points]
@@ -90,7 +101,26 @@ def update_results(session_state, all_points, all_labels, file_name):
 
     # **Generate the Annotation Report**
     category = next((key for key, value in label_lists.items() if value == label_list), None)
-    if category == "Ki67":
+    if category == "Intensidad por IHC":
+        num_positive = labels.count(0)
+        num_negative = labels.count(1)
+        total = num_positive + num_negative
+
+        if total == 0:
+            total = 1  # Avoid division by zero
+
+        report_content = f"""
+        Reporte de anotación
+        ==================
+        Nombre de la imagen: {category}
+        Fecha y hora de generación: {current_datetime}
+        Número de puntos +++: {num_positive} - Porcentaje: {100 * num_positive / total:.2f}%
+        Número de puntos ++: {num_negative} - Porcentaje: {100 * num_negative / total:.2f}%
+        Número de puntos +: {num_negative} - Porcentaje: {100 * num_negative / total:.2f}%
+
+        Cantidad total de elementos: {total}
+        """
+    elif category == "Ki67/ER/PR":
         num_positive = labels.count(0)
         num_negative = labels.count(1)
         total = num_positive + num_negative
@@ -535,3 +565,16 @@ def image_ann(session_state):
             #     file_name=f'{image_name}_annotated.png',
             #     mime='image/png'
             # )
+    __all__ = [
+    'Ki67_colors',
+    'ERPR_colors',
+    'her2_colors',
+    'label_lists',
+    'category_colors',
+    'update_patch_data',
+    'update_results',
+    'update_annotations',
+    'init_session',
+    'read_results_from_csv',
+    'recover_session'
+]

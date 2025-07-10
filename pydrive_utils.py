@@ -66,15 +66,41 @@ def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent
     query = f"trashed=false and mimeType='application/vnd.google-apps.folder'"
     if parent_folder_id:
         query += f" and '{parent_folder_id}' in parents"
+    # Comprobar que todas las carpetas existen
 
-    # Folder Dictionary
+    
+    # Buscar todas las carpetas visibles que coincidan
+    found_folders = drive.ListFile({"q": query}).GetList()
+
+    # Crear diccionario con las carpetas encontradas por nombre
     folder_dict = {
+        gfile['title']: gfile
+        for gfile in found_folders
+        if gfile['title'] in [todo_name, toreview_name, done_name, discarded_name]
+    }
+
+    """folder_dict = {
         fname: gfile 
         for gfile in drive.ListFile({"q": query}).GetList() 
         for fname in [todo_name, toreview_name, done_name, discarded_name] 
         if gfile['title'] == fname
-    }
+    }"""
+    
+    required_folders = [todo_name, toreview_name, done_name, discarded_name]
+    missing_folders = [name for name
+    in required_folders if name not in folder_dict]
+    if missing_folders:
+        raise ValueError(f"Las siguientes carpetas no se encontraron en Drive: {missing_folders}")
+    
+    # Crear diccionario con carpetas encontradas por nombre
+    nombres_buscados = [todo_name, toreview_name, done_name, discarded_name]
 
+    folder_dict = {}
+    for folder in found_folders:
+        title = folder['title']
+        if title in nombres_buscados:
+            print(f"✅ Carpeta '{title}' existe en Drive.")
+            folder_dict[title] = folder
     # Helper function to create dictionaries for each folder
     def create_dict(folder_id):
         # List all files in the folder and include metadata in the query
@@ -491,16 +517,27 @@ def upload_file_to_gdrive(drive, file_path, folder_id):
 
 if __name__ == '__main__':
     # Path to keys.
-    path_to_json_key = 'testing_service_key.json'
+    path_to_json_key = 'anotadorstreamlit.json'
     
     # Folders where done and to-do images, csvs and jsons are stored.
-    todo_name, done_name = 'F1', 'F2'
-
-    # Get drive instance from keys.
+    # Nombres de las carpetas en Google Drive
+    """
+    todo_name = 'F1'
+    toreview_name = 'ToReview'
+    done_name = 'F2'
+    discarded_name = 'Discarded' 
+    """
+    todo_name = 'anotaciones_a_hacer'
+    toreview_name = 'anotaciones_a_revisar'
+    done_name = 'anotaciones_ok'
+    discarded_name = 'anotaciones_descartadas'
+    # Conectarse al drive
     drive = get_drive(path_to_json_key)
 
-    # Get dictionaries.
-    folder_dict, todo_dict, done_dict = get_dicts(drive, todo_name, done_name)
+    # Obtener los diccionarios
+    folder_dict, todo_dict, toreview_dict, done_dict, discarded_dict = get_dicts(
+        drive, todo_name, toreview_name, done_name, discarded_name
+    )
     
     # Drive info.
     about = drive.GetAbout()
