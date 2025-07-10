@@ -270,7 +270,7 @@ def ann_correction(session_state):
     if 'drive' not in session_state:
         
         json_contents = st.secrets["service_account"]["credentials"]
-        json_contents = json.loads(json_contents)
+        #json_contents = json.loads(json_contents)
 
         with open(path_to_json_key, "w") as json_file:
             json.dump(json_contents, json_file, indent=4)  # Pretty formatting
