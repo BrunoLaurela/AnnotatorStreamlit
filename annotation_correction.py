@@ -139,8 +139,8 @@ def load_sample(session_state, selected_sample):
             elif selected_sample in discarded_dict.keys():
                 img_path = get_gdrive_image_path(drive, discarded_dict[selected_sample], image_dir, selected_sample)
 
-        except Exception:
-            st.error(f"⚠️ Hubo un problema al descargar la imagen para el sample '{selected_sample}'. Notifica al administrador.")
+        except Exception as e:
+            st.error(f"⚠️ Hubo un problema al descargar la imagen para el sample '{selected_sample}'. Notifica al administrador.\nError: {e}")
             return -1
     #print(f"Image path: {img_path} ", f"type image path{type(img_path)}")
     # Verify if the CSV file exists and is not empty
@@ -268,9 +268,9 @@ def ann_correction(session_state):
     )
 
     if 'drive' not in session_state:
-        
+        print("Setting up Google Drive connection...")
         json_contents = st.secrets["service_account"]["credentials"]
-        #json_contents = json.loads(json_contents)
+        json_contents = json.loads(json_contents)
 
         with open(path_to_json_key, "w") as json_file:
             json.dump(json_contents, json_file, indent=4)  # Pretty formatting
