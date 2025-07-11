@@ -303,14 +303,14 @@ def ann_correction(session_state):
         # Hardcode the category to 'HER2/neu' and disable the selectbox
         categories = ['HER2/neu', 'Ki67/ER/PR', 'Intensidad por IHC']
         label_lists = {
-            'Ki67/ER/PR': ['Positivo', 'Negativo', 'No importante'],
-            'Intensidad por IHC': ['+', '++', '+++'],
+            'Ki67': ['Positivo', 'Negativo', 'No importante'],
+            'ER/PR': ['Positivo+', 'Positivo++', 'Positivo+++', 'Negativo', 'No importante'],
             'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
         }
         category_colors = {
             'HER2/neu': her2_colors,
-            'Ki67/ER/PR': Ki67_colors,
-            'Intensidad por IHC': ERPR_colors
+            'Ki67': Ki67_colors,
+            'ER/PR': ERPR_colors
         }
 
         # Sidebar selectbox habilitado
