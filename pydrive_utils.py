@@ -11,6 +11,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 
 
+
 def get_drive(path_to_json):
     """Get the Drive instance from the service account keys.
     
@@ -41,26 +42,32 @@ def get_drive(path_to_json):
     
     # Return drive.
     return drive
-def get_drive_oauth(path_to_json):
-    """Get Google Drive instance using OAuth 2.0 for user login."""
+def get_drive_oauth(client_secrets_str):
     gauth = GoogleAuth()
-
-    # Intenta cargar credenciales previamente guardadas (opcional)
-    gauth.LoadCredentialsFile(path_to_json)
-
+    
+    
+    # Guardar el JSON en un archivo temporal
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp_file:
+        temp_file.write(client_secrets_str)
+        temp_file.flush()
+        temp_path = temp_file.name
+    
+    # Cargar configuración OAuth desde el archivo temporal
+    gauth.LoadClientConfigFile(temp_path)
+    
+    # Intentar cargar credenciales guardadas (tokens)
+    gauth.LoadCredentialsFile("mycreds.txt")
+    
     if gauth.credentials is None:
-        # Si no hay credenciales guardadas, inicia el login
-        gauth.LocalWebserverAuth()
+        gauth.LocalWebserverAuth()  # login
     elif gauth.access_token_expired:
-        # Si el token expiró, renueva
-        gauth.Refresh()
+        gauth.Refresh()             # renovar token
     else:
-        # Usa las credenciales existentes
-        gauth.Authorize()
-
-    # Guarda las credenciales para la próxima vez (opcional)
+        gauth.Authorize()           # usar token existente
+    
+    # Guardar credenciales para próxima vez
     gauth.SaveCredentialsFile("mycreds.txt")
-
+    
     return GoogleDrive(gauth)
 
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
