@@ -301,7 +301,7 @@ def ann_correction(session_state):
     st.sidebar.header("Anotación de imágenes")
     with st.sidebar:
         # Hardcode the category to 'HER2/neu' and disable the selectbox
-        categories = ['HER2/neu', 'Ki67/ER/PR', 'Intensidad por IHC']
+        categories = ['HER2/neu', 'Ki67', 'ER/PR']
         label_lists = {
             'Ki67': ['Positivo', 'Negativo', 'No importante'],
             'ER/PR': ['Positivo+', 'Positivo++', 'Positivo+++', 'Negativo', 'No importante'],
