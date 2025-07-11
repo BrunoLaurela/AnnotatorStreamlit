@@ -35,8 +35,10 @@ Ki67_colors = [
 ]
 ERPR_colors = [
     "#A2E700", # + (verdoso)
-    "#F06D17",  # ++ (naranja) 
+    "#F06D17", # ++ (naranja) 
     "#FF0000"  # +++ (Rojo)
+    "#1100FF",  # Negativo (azul)
+    "#999999"   # No importa (Gris)
        
 ]
 her2_colors = [
