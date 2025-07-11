@@ -31,8 +31,8 @@ path_to_json_key = 'anotadorstreamlit.json'
 
 def setup_drive(session_state):
     try:
-        drive = get_drive(path_to_json_key)
-        #drive = get_drive_oauth()
+        #drive = get_drive(path_to_json_key)
+        drive = get_drive_oauth(path_to_json_key)
     except Exception as e:
         st.error("⚠️ Hubo un problema al inicializar la conexión con Google Drive. Notifica al administrador " f"{e}.")
         return -1
