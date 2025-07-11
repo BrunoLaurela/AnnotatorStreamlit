@@ -199,7 +199,7 @@ def load_sample(session_state, selected_sample):
     session_state['load_succesful'] = True
     return 1
 
-def finish_annotation(session_state, selected_sample, target_dir):
+def finish_annotation(session_state, selected_sample, target_dir,label_list):
     drive = session_state['drive']
     todo_dict = session_state['todo_dict']
     toreview_dict = session_state['toreview_dict']
@@ -259,8 +259,8 @@ def ann_correction(session_state):
     st.markdown(
         """
         ### ℹ️ Consejos de uso  
-        - **Selección de puntos:** Haz clic y arrastra para dibujar un cuadro y seleccionar puntos.
-        - **Eliminar puntos:** Presionar 'retroceso' permite eliminar los puntos seleccionados.
+        - **Selección de puntos:** Haz clic y arrastra para dibujar un cuadro y seleccionar puntos o directramente click sobre el punto.
+        - **Eliminar puntos:**  Presionar la tecla'retroceso' o 'backspace' permite eliminar los puntos seleccionados.
         - **Cambiar etiqueta:** Presionar 'shift' cambia la clase del punto seleccionado.  
         - **Mover imagen horizontalmente:** Usa las flechas del teclado para moverte a través de la imagen.
         """,
@@ -373,13 +373,13 @@ def ann_correction(session_state):
                     st.warning("Por favor, selecciona una acción válida antes de confirmar.")
                 elif 'selected_sample' in session_state:
                     if action == f"{toreview_symbol} Mandar a revisión":
-                        finish_annotation(session_state, session_state['selected_sample'], anns_toreview_dir)
+                        finish_annotation(session_state, session_state['selected_sample'], anns_toreview_dir,label_list)
                         st.success(f"Muestra '{session_state['selected_sample']}' enviada a revisión.")
                     elif action == f"{done_symbol} Finalizar anotación":
-                        finish_annotation(session_state, session_state['selected_sample'], anns_done_dir)
+                        finish_annotation(session_state, session_state['selected_sample'], anns_done_dir,label_list)
                         st.success(f"Anotación finalizada para '{session_state['selected_sample']}'.")
                     elif action == f"{discard_symbol} Descartar":
-                        finish_annotation(session_state, session_state['selected_sample'], anns_discarded_dir)
+                        finish_annotation(session_state, session_state['selected_sample'], anns_discarded_dir,label_list)
                         st.success(f"Muestra '{session_state['selected_sample']}' descartada.")
                     setup_drive(session_state)  # Update drive
 
