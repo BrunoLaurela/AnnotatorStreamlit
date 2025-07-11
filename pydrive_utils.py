@@ -510,11 +510,24 @@ def upload_file_to_gdrive(drive, file_path, folder_id):
     folder_id : str
         ID of the destination directory in Google Drive.
     """
-    file_name = os.path.basename(file_path)
+    """file_name = os.path.basename(file_path)
     gfile = drive.CreateFile({'title': file_name, 'parents': [{'id': folder_id}]})
     gfile.SetContentFile(file_path)
     gfile.Upload()
+    """
+    file_name = os.path.basename(file_path)
 
+    # usar unidades compartidas (Shared Drives)
+    gfile = drive.CreateFile({
+        'title': file_name,
+        'parents': [{'id': folder_id}],
+        'supportsAllDrives': True
+    })
+
+    gfile.SetContentFile(file_path)
+
+    #  este parámetro evita el error 403
+    gfile.Upload(param={'supportsAllDrives': True})
 if __name__ == '__main__':
     # Path to keys.
     path_to_json_key = 'anotadorstreamlit.json'
