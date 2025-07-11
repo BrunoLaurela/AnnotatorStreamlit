@@ -46,7 +46,7 @@ def get_drive_oauth():
     gauth = GoogleAuth()
 
     # Intenta cargar credenciales previamente guardadas (opcional)
-    gauth.LoadCredentialsFile("mycreds.txt")
+    gauth.LoadCredentialsFile("/workspaces/AnnotatorStreamlit/anotadorstreamlit.json")
 
     if gauth.credentials is None:
         # Si no hay credenciales guardadas, inicia el login
@@ -62,6 +62,7 @@ def get_drive_oauth():
     gauth.SaveCredentialsFile("mycreds.txt")
 
     return GoogleDrive(gauth)
+
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
 
