@@ -41,12 +41,12 @@ def get_drive(path_to_json):
     
     # Return drive.
     return drive
-def get_drive_oauth():
+def get_drive_oauth(path_to_json):
     """Get Google Drive instance using OAuth 2.0 for user login."""
     gauth = GoogleAuth()
 
     # Intenta cargar credenciales previamente guardadas (opcional)
-    gauth.LoadCredentialsFile("/workspaces/AnnotatorStreamlit/anotadorstreamlit.json")
+    gauth.LoadCredentialsFile(path_to_json)
 
     if gauth.credentials is None:
         # Si no hay credenciales guardadas, inicia el login
