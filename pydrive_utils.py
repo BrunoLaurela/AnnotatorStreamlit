@@ -8,6 +8,9 @@ from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from oauth2client.service_account import ServiceAccountCredentials
 
+
+
+
 def get_drive(path_to_json):
     """Get the Drive instance from the service account keys.
     
@@ -38,7 +41,27 @@ def get_drive(path_to_json):
     
     # Return drive.
     return drive
+def get_drive_oauth():
+    """Get Google Drive instance using OAuth 2.0 for user login."""
+    gauth = GoogleAuth()
 
+    # Intenta cargar credenciales previamente guardadas (opcional)
+    gauth.LoadCredentialsFile("mycreds.txt")
+
+    if gauth.credentials is None:
+        # Si no hay credenciales guardadas, inicia el login
+        gauth.LocalWebserverAuth()
+    elif gauth.access_token_expired:
+        # Si el token expiró, renueva
+        gauth.Refresh()
+    else:
+        # Usa las credenciales existentes
+        gauth.Authorize()
+
+    # Guarda las credenciales para la próxima vez (opcional)
+    gauth.SaveCredentialsFile("mycreds.txt")
+
+    return GoogleDrive(gauth)
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
 
