@@ -46,7 +46,6 @@ def get_drive(path_to_json):
 def get_drive_oauth(client_secrets_str):
     gauth = GoogleAuth()
     
-    
     # Guardar el JSON en un archivo temporal
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp_file:
         temp_file.write(client_secrets_str)
@@ -57,7 +56,10 @@ def get_drive_oauth(client_secrets_str):
     gauth.LoadClientConfigFile(temp_path)
     
     # Intentar cargar credenciales guardadas (tokens)
-    gauth.LoadCredentialsFile("mycreds.txt")
+    try:
+        gauth.LoadCredentialsFile("mycreds.txt")
+    except Exception:
+        pass
     
     if gauth.credentials is None:
         gauth.LocalWebserverAuth()  # login
@@ -69,7 +71,8 @@ def get_drive_oauth(client_secrets_str):
     # Guardar credenciales para próxima vez
     gauth.SaveCredentialsFile("mycreds.txt")
     
-    return GoogleDrive(gauth)
+    drive = GoogleDrive(gauth)
+    return drive
 
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
