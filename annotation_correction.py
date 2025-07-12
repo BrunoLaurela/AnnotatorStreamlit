@@ -7,7 +7,6 @@ from image_annotation import *
 from pydrive_utils import *
 from datetime import datetime, timedelta
 
-import tempfile
 
 todo_symbol = '(⬜️)'
 toreview_symbol = '(👀)'
