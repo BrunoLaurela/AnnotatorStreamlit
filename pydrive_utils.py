@@ -3,14 +3,19 @@ import json
 from itertools import groupby
 from datetime import datetime, timedelta
 #from io import BytesIO, StringIO
-
+import base64
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from oauth2client.service_account import ServiceAccountCredentials
 
 import tempfile
 
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+import pickle
 
+from googleapiclient.discovery import build
+SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
 def get_drive(path_to_json):
@@ -43,12 +48,15 @@ def get_drive(path_to_json):
     
     # Return drive.
     return drive
-def get_drive_oauth(client_secrets_str):
+def get_drive_oauth(client_secrets_base64_str):
     gauth = GoogleAuth()
 
-    # Guardar el JSON en un archivo temporal
+    # Decodificar base64 a JSON string
+    client_secrets_json = base64.b64decode(client_secrets_base64_str).decode("utf-8")
+
+    # Guardar el JSON decodificado en un archivo temporal
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp_file:
-        temp_file.write(client_secrets_str)
+        temp_file.write(client_secrets_json)
         temp_file.flush()
         temp_path = temp_file.name
 
@@ -68,14 +76,13 @@ def get_drive_oauth(client_secrets_str):
         gauth.LocalWebserverAuth()  # login
     elif gauth.access_token_expired:
         gauth.Refresh()             # renovar token
-    else:
         gauth.Authorize()           # usar token existente
 
     # Guardar credenciales para próxima vez en la ruta temporal
     gauth.SaveCredentialsFile(creds_path)
 
     drive = GoogleDrive(gauth)
-    return drive
+    return drive    
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
 
@@ -565,10 +572,34 @@ def upload_file_to_gdrive(drive, file_path, folder_id):
 
     #  este parámetro evita el error 403
     gfile.Upload(param={'supportsAllDrives': True})"""
+
+def get_credentials():
+    creds = None
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token_file:
+            creds = pickle.load(token_file)
+
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file('client_secrets.json', SCOPES)
+            creds = flow.run_local_server(port=0)  # Cambiar a run_console() si no tenés navegador
+
+        with open('token.pickle', 'wb') as token_file:
+            pickle.dump(creds, token_file)
+
+    return creds
+
+# Ejecutar
 if __name__ == '__main__':
     # Path to keys.
     path_to_json_key = 'anotadorstreamlit.json'
-    
+    #creds = get_credentials()
+    creds = get_credentials()
+    service = build('drive', 'v3', credentials=creds)
+
+    print("Credenciales obtenidas correctamente.",creds)
     # Folders where done and to-do images, csvs and jsons are stored.
     # Nombres de las carpetas en Google Drive
     """
