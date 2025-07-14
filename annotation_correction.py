@@ -34,7 +34,7 @@ def setup_drive(session_state):
     try:
         #drive = get_drive(path_to_json_key)
        
-        client_secrets_str = st.secrets["oauth_client"]["TOKEN_JSON_BASE64 "]
+        client_secrets_str = st.secrets["oauth_client"]["TOKEN_JSON_BASE64"]
         drive = get_drive_oauth(client_secrets_str)
     except KeyError:
         st.error("❌ La clave 'TOKEN_JSON_BASE64' no está en st.secrets. Revisa tu archivo secrets.toml o la configuración en Streamlit Cloud.")
