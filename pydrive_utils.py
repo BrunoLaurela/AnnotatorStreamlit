@@ -169,23 +169,54 @@ def get_drive_oauth_(secrets):
     drive = GoogleDrive(gauth)
     return drive
 
-def get_drive_service_account(secrets):
-    # Decodificar JSON de cuenta de servicio desde base64
-    token_json_str = base64.b64decode(secrets["service_account"]["token_json_base64"]).decode("utf-8")
-    json_dict = json.loads(token_json_str)
+"""def get_drive_service_account(secrets):
+     # El JSON viene como string, parsearlo a dict
+    creds_json_str = secrets["service_account"]["credentials"]
+    creds_dict = json.loads(creds_json_str)
+    
+    # Crear archivo temporal con las credenciales
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
+        json.dump(creds_dict, f)
+        f.flush()
+        creds_path = f.name
 
-    # Guardarlo temporalmente
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as tmpfile:
-        json.dump(json_dict, tmpfile)
-        tmpfile.flush()
-        service_json_path = tmpfile.name
-
-    # Autenticación
     gauth = GoogleAuth()
-    gauth.LoadServiceConfigFile(service_json_path)
+    gauth.settings['client_config_backend'] = 'service'
+    gauth.settings['service_config'] = {
+        'client_json_file_path': creds_path,
+    }
+
+    gauth.ServiceAuth()  # Autentica con service account
+    drive = GoogleDrive(gauth)
+    return drive"""
+
+def get_drive_service_account(secrets):
+    # Leer el JSON desde los secrets de Streamlit
+    creds_json_str = secrets["oauth_client"]["credentials"]
+    
+    # Parsear el string JSON a dict
+    creds_dict = json.loads(creds_json_str)
+    
+    # Crear archivo temporal con las credenciales (PyDrive espera archivo físico)
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
+        json.dump(creds_dict, f)
+        f.flush()
+        creds_path = f.name
+
+    # Configurar GoogleAuth para service account
+    gauth = GoogleAuth()
+    gauth.settings['client_config_backend'] = 'service'
+    gauth.settings['service_config'] = {
+        'client_json_file_path': creds_path,
+    }
+
+    # Autenticar con la service account
     gauth.ServiceAuth()
 
-    return GoogleDrive(gauth)
+    # Crear el objeto Drive con la sesión autenticada
+    drive = GoogleDrive(gauth)
+    return drive
+
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
 
