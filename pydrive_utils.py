@@ -191,13 +191,16 @@ def get_drive_oauth_(secrets):
     return drive"""
 
 def get_drive_service_account(secrets):
+    import tempfile
+    import json
+    from pydrive2.auth import GoogleAuth
+    from pydrive2.drive import GoogleDrive
+
     # Leer el JSON desde los secrets de Streamlit
     creds_json_str = secrets["oauth_client"]["credentials"]
-    
-    # Parsear el string JSON a dict
     creds_dict = json.loads(creds_json_str)
     
-    # Crear archivo temporal con las credenciales (PyDrive espera archivo físico)
+    # Crear archivo temporal con las credenciales
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
         json.dump(creds_dict, f)
         f.flush()
@@ -208,6 +211,7 @@ def get_drive_service_account(secrets):
     gauth.settings['client_config_backend'] = 'service'
     gauth.settings['service_config'] = {
         'client_json_file_path': creds_path,
+        'client_user_email': creds_dict["client_email"],  # 🔧 Este campo es necesario
     }
 
     # Autenticar con la service account
@@ -216,6 +220,7 @@ def get_drive_service_account(secrets):
     # Crear el objeto Drive con la sesión autenticada
     drive = GoogleDrive(gauth)
     return drive
+
 
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
