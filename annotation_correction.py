@@ -200,7 +200,7 @@ def load_sample(session_state, selected_sample, label_list):
     all_points, all_labels = read_results_from_csv(ann_file_path,label_list)
     session_state['all_points'] = all_points
     session_state['all_labels'] = all_labels
-
+    print(f"Loaded {len(all_points)} points and {len(all_labels)} labels from {ann_file_path}")
     # This must be done last
     session_state['load_succesful'] = True
     return 1
@@ -575,6 +575,7 @@ def ann_correction(session_state):
             update_results(session_state, all_points, all_labels, base_name,label_list)
             # update_ann_image(session_state, all_points, all_labels, image)
 
+
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         st.subheader("Vista previa de las clases anotadas")
 
@@ -586,7 +587,7 @@ def ann_correction(session_state):
             label_colors = {label: color for label, color in zip(label_list, colors)}
         else:
             label_colors = get_colormap(label_list)
-  
+        
         for i, label in enumerate(label_list):
             ax.scatter(i, 0, color=label_colors[label], s=50)
             ax.text(i, -0.1, label, ha='center', va='top', fontsize=7)

@@ -10,6 +10,7 @@ import pandas as pd
 import os
 from datetime import datetime
 from pytz import timezone
+import matplotlib.pyplot as plt
 
 # Folders
 image_dir  = "./images"
@@ -17,11 +18,10 @@ ann_dir    = "./annotations"
 report_dir = "./reports"
 
 # Define label list
-categories = ['HER2/neu','Ki67/ER/PR', 'Intensidad por IHC'] #'Ki67 / ER / PR', 'Intensidad por IHC', 
+categories = ['HER2/neu', 'Ki67', 'ER/PR']
 label_lists = {
-    'Ki67/ER/PR': ['Positivo', 'Negativo', 'No importante'],
-    'Intensidad por IHC': ['+', '++', '+++'],
-    #'Progesterona': ['Positivo', 'Negativo', 'No importante'],
+    'Ki67': ['Positivo', 'Negativo', 'No importante'],
+    'ER/PR': ['Positivo+', 'Positivo++', 'Positivo+++', 'Negativo', 'No importante'],
     'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
 }
 
@@ -53,8 +53,10 @@ her2_colors = [
 
 # mapping for colors based on the category
 category_colors = {
-    'HER2/neu': her2_colors,
-}
+            'HER2/neu': her2_colors,
+            'Ki67': Ki67_colors,
+            'ER/PR': ERPR_colors
+        }
 
 def init_session(session_state):
 
@@ -103,26 +105,29 @@ def update_results(session_state, all_points, all_labels, file_name,label_list):
 
     # **Generate the Annotation Report**
     category = next((key for key, value in label_lists.items() if value == label_list), None)
-    if category == "Intensidad por IHC":
-        num_positive = labels.count(0)
-        num_negative = labels.count(1)
-        total = num_positive + num_negative
-
+    if category == "ER/PR":
+        total = sum(labels.count(i) for i in range(len(label_list) - 1))
         if total == 0:
             total = 1  # Avoid division by zero
 
         report_content = f"""
-        Reporte de anotación
-        ==================
-        Nombre de la imagen: {category}
+        Reporte de anotación {category}
+        =========================
+        Imagen: {file_name}
         Fecha y hora de generación: {current_datetime}
-        Número de puntos +++: {num_positive} - Porcentaje: {100 * num_positive / total:.2f}%
-        Número de puntos ++: {num_negative} - Porcentaje: {100 * num_negative / total:.2f}%
-        Número de puntos +: {num_negative} - Porcentaje: {100 * num_negative / total:.2f}%
-
-        Cantidad total de elementos: {total}
+        ---
+        Positivo 3+: {labels.count(0)} - Porcentaje: {100 * labels.count(0) / total:.2f}%
+        Positivo 2+: {labels.count(1)} - Porcentaje: {100 * labels.count(1) / total:.2f}%
+        Positivo 1+: {labels.count(2)} - Porcentaje: {100 * labels.count(2) / total:.2f}%
+        Negativo: {labels.count(3)} - Porcentaje: {100 * labels.count(3) / total:.2f}%
+        No importante: {labels.count(4)} - Porcentaje: {100 * labels.count(4) / total:.2f}%
+    
+        ---
+        Total: {total} - Porcentaje: {100 * total / total:.2f}%
+        ---
+        
         """
-    elif category == "Ki67/ER/PR":
+    elif category == "Ki67":
         num_positive = labels.count(0)
         num_negative = labels.count(1)
         total = num_positive + num_negative
@@ -201,7 +206,7 @@ def update_annotations(new_labels, all_points, all_labels, session_state):
         point_tuple = (x, y)
 
         if point_tuple not in all_points:
-            all_points.add(point_tuple)
+            all_points.append(point_tuple)
             all_labels[point_tuple] = label_id  # Store the label for this point
 
         else:
@@ -283,13 +288,13 @@ def update_annotations(new_labels, all_points, all_labels, session_state):
 #     session_state['ann_image'] = image_buffer
 
 
-def recover_session(session_state, all_points, all_labels, file_name, image=None):
+def recover_session(session_state, all_points, all_labels, file_name,label_list,image=None):
 
     session_state['all_points'] = all_points 
     session_state['all_labels'] = all_labels 
 
     update_patch_data(session_state, all_points, all_labels)
-    update_results(session_state, all_points, all_labels, file_name)
+    update_results(session_state, all_points, all_labels, file_name, label_list)
     # update_ann_image(session_state, all_points, all_labels, image)
 
 
@@ -339,8 +344,8 @@ def check_files(image_file_name, folder_path="./images"):
     return image_file_base in file_names_in_folder
 
 
-def read_results_from_csv(csv_filename,label_list):
-    """
+"""def read_results_from_csv(csv_filename,label_list):
+    
     Reads the contents of a CSV file created by the `update_results` function
     and extracts all_points and all_labels.
 
@@ -351,7 +356,7 @@ def read_results_from_csv(csv_filename,label_list):
         tuple: A tuple containing:
             - all_points (list of tuples): List of points [(x1, y1), (x2, y2), ...].
             - all_labels (list): List of labels corresponding to each point.
-    """
+    
     all_points = set()
     all_labels = {}
 
@@ -373,10 +378,41 @@ def read_results_from_csv(csv_filename,label_list):
     except Exception as e:
         print(f"Error reading the file: {e}")
     
+    return all_points, all_labels"""
+def read_results_from_csv(csv_filename, label_list):
+    all_points = []
+    all_labels = {}
+    print("Intentando abrir:", csv_filename)
+    print("Existe el archivo?", os.path.exists(csv_filename))
+    print("Tamaño del archivo:", os.path.getsize(csv_filename) if os.path.exists(csv_filename) else "No existe")
+
+    try:
+        with open(csv_filename, mode="r", encoding="utf-8") as csv_file:
+            csv_reader = csv.DictReader(csv_file)
+            for row in csv_reader:
+                x = int(row["X"])
+                y = int(row["Y"])
+                label = row["Label"].strip()
+                label_id = label_list.index(label)
+                print(f"Etiqueta leída: '{label}'")
+                print(f"Etiqueta ID: {label_id}")
+                print(f"Coordenadas: ({x}, {y})")
+                point_tuple = (x, y)
+
+                all_points.append(point_tuple)
+                all_labels[point_tuple] = label_id
+
+    except FileNotFoundError:
+        print(f"Error: File '{csv_filename}' not found.")
+    except ValueError as ve:
+        print(f"Error con el valor: {ve}")
+    except Exception as e:
+        print(f"Error leyendo el archivo: {e}")
+    
+    print(f"Cargados {len(all_points)} puntos y {len(all_labels)} etiquetas")
     return all_points, all_labels
 
-
-def get_image(session_state):
+def get_image(session_state,label_list):
 
     image_file_name = None
     img_path = None
@@ -402,7 +438,7 @@ def get_image(session_state):
             return image_file_name, img_path
             
     if 'image_file_name' not in session_state or session_state['image_file_name'] != image_file_name:
-        handle_new_image(session_state, image, image_file_name, img_path)
+        handle_new_image(session_state, image, image_file_name, img_path,label_list)
         session_state['image_file_name'] = image_file_name
         session_state['img_path'] = img_path
 
@@ -414,7 +450,7 @@ def get_image(session_state):
     return image_file_name, img_path    
 
 
-def handle_new_image(session_state, image, image_file_name, img_path):
+def handle_new_image(session_state, image, image_file_name, img_path,label_list):
 
     # We check if the image was previously annotated
     result = check_files(image_file_name)
@@ -422,8 +458,8 @@ def handle_new_image(session_state, image, image_file_name, img_path):
     if result: # Recover previous annotations
         base_name = os.path.splitext(image_file_name)[0]
         csv_file_name = f"{ann_dir}/{base_name}.csv"
-        all_points, all_labels = read_results_from_csv(csv_file_name)
-        recover_session(session_state, all_points, all_labels, base_name)
+        all_points, all_labels = read_results_from_csv(csv_file_name, label_list)
+        recover_session(session_state, all_points, all_labels, base_name,label_list)
 
     else: # We store a backup of the image
         image.save(img_path)
@@ -479,8 +515,9 @@ def image_ann(session_state):
         with col2:
             category = st.selectbox("Categoría:", categories)
             session_state['label'] = st.selectbox("Clase:", label_lists[category])
-
-    image_file_name, img_path = get_image(session_state)
+            label_list = label_lists[category]
+            colors = category_colors[category]
+    image_file_name, img_path = get_image(session_state,label_list)
 
     if image_file_name is not None:
         try:
@@ -501,8 +538,8 @@ def image_ann(session_state):
 
             base_name = os.path.splitext(image_file_name)[0]
             csv_file_name = f"{ann_dir}/{base_name}.csv"
-            all_points, all_labels = read_results_from_csv(csv_file_name)
-            recover_session(session_state, all_points, all_labels, base_name)
+            all_points, all_labels = read_results_from_csv(csv_file_name, label_list)
+            recover_session(session_state, all_points, all_labels, label_list, base_name)
 
             mode  = 'Transform'
 
@@ -534,10 +571,34 @@ def image_ann(session_state):
 
             # Update results
             base_name = os.path.splitext(image_file_name)[0]
-            update_results(session_state, all_points, all_labels, base_name)
+            update_results(session_state, all_points, all_labels, base_name, label_list)
             # update_ann_image(session_state, all_points, all_labels, image)
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        st.subheader("Vista previa de las clases anotadas")
 
+        # Crear el gráfico de vista previa
+        fig, ax = plt.subplots(figsize=(10, 1))
+
+        # Use custom colors if available
+        if colors:
+            label_colors = {label: color for label, color in zip(label_list, colors)}
+        else:
+            label_colors = get_colormap(label_list)
+        print("label_list:", label_list)
+        print("label_colors:", label_colors)
+        for i, label in enumerate(label_list):
+            ax.scatter(i, 0, color=label_colors[label], s=50)
+            ax.text(i, -0.1, label, ha='center', va='top', fontsize=7)
+
+        ax.set_xlim(-1, len(label_list))
+        ax.set_ylim(-0.5, 0.5)
+        ax.axis('off')
+        st.pyplot(fig)
+
+        # Display the annotation report generated in the session state
+        st.text(session_state['report_data'])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     # Download results
     if 'image_file_name' in session_state:
@@ -559,6 +620,7 @@ def image_ann(session_state):
                 file_name=f'{image_name}.txt',
                 mime='text/plain'
             )
+        
 
             # # **3rd Download Button** - Annotated Image
             # st.download_button(
@@ -572,7 +634,6 @@ def image_ann(session_state):
     'ERPR_colors',
     'her2_colors',
     'label_lists',
-    'category_colors',
     'update_patch_data',
     'update_results',
     'update_annotations',
