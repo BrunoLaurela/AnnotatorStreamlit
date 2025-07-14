@@ -197,7 +197,7 @@ def load_sample(session_state, selected_sample):
     session_state['img_path'] = img_path
     session_state['annotations'] = annotations
 
-    all_points, all_labels = read_results_from_csv(ann_file_path)
+    all_points, all_labels = read_results_from_csv(ann_file_path, label_lists)
     session_state['all_points'] = all_points
     session_state['all_labels'] = all_labels
 
