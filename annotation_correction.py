@@ -32,13 +32,13 @@ path_to_json_key = 'token.json'
 
 def setup_drive(session_state):
     
-    #drive = get_drive(path_to_json_key)
+    drive = get_drive(path_to_json_key)
           
           
     #client_secrets_str = st.secrets["oauth_client"]["client_secrets"]
           
     #token_json_b64 = st.secrets["oauth_client"]["token_json_base64"]
-    drive = get_drive_service_account(st.secrets) #get_drive_oauth_
+    #drive = get_drive_service_account(st.secrets) #get_drive_oauth_
 
    
 
@@ -509,7 +509,7 @@ def ann_correction(session_state):
     # We check if the last load was succesful
     if 'load_succesful' not in session_state or \
         session_state['load_succesful'] != True:
-        if load_sample(session_state, selected_sample) < 0:
+        if load_sample(session_state, selected_sample,label_list) < 0:
             return
 
     if 'image_file_name' in session_state:
