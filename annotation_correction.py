@@ -28,7 +28,7 @@ anns_done_dir = 'anotaciones_ok'
 anns_discarded_dir = 'anotaciones_descartadas'
 
 #path_to_json_key = "pydrive_credentials.json"
-path_to_json_key = 'anotadorstreamlit.json'
+path_to_json_key = 'token.json'
 
 def setup_drive(session_state):
     try:
