@@ -34,7 +34,7 @@ def setup_drive(session_state):
     try:
         #drive = get_drive(path_to_json_key)
        
-        client_secrets_str = st.secrets["oauth_client"]["TOKEN_JSON_BASE64"]
+        client_secrets_str = st.secrets["oauth_client"]["TOKEN_JSON_BASE64 "]
         drive = get_drive_oauth(client_secrets_str)
     except KeyError:
         st.error("❌ La clave 'TOKEN_JSON_BASE64' no está en st.secrets. Revisa tu archivo secrets.toml o la configuración en Streamlit Cloud.")
@@ -283,9 +283,9 @@ def ann_correction(session_state):
             json.dump(json_contents, json_file, indent=4)  # Pretty formatting
 
         init_session(session_state)
-        if setup_drive(session_state) < 0:
+        result = setup_drive(session_state)
+        if result is None or result < 0:
             return
-        
 
     st.sidebar.header("Visualización")
     with st.sidebar:
