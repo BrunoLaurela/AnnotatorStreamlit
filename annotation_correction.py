@@ -535,7 +535,7 @@ def ann_correction(session_state):
         except KeyError:
             base_name = os.path.splitext(image_file_name)[0]
             csv_file_name = f"{ann_dir}/{base_name}.csv"
-            all_points, all_labels = read_results_from_csv(csv_file_name)
+            all_points, all_labels = read_results_from_csv(csv_file_name,label_list)
             recover_session(session_state, all_points, all_labels, base_name)
 
             mode  = 'Transform'

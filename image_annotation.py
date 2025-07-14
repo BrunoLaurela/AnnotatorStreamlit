@@ -339,7 +339,7 @@ def check_files(image_file_name, folder_path="./images"):
     return image_file_base in file_names_in_folder
 
 
-def read_results_from_csv(csv_filename):
+def read_results_from_csv(csv_filename,label_list):
     """
     Reads the contents of a CSV file created by the `update_results` function
     and extracts all_points and all_labels.
