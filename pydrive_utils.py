@@ -86,8 +86,8 @@ def get_drive(path_to_json):
 import base64
 import tempfile
 import os
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
 
 def get_drive_oauth(client_secrets_str, token_json_b64):
     gauth = GoogleAuth()
