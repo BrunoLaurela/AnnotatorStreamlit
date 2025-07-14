@@ -38,7 +38,7 @@ def setup_drive(session_state):
     #client_secrets_str = st.secrets["oauth_client"]["client_secrets"]
           
     #token_json_b64 = st.secrets["oauth_client"]["token_json_base64"]
-    drive = get_drive_oauth_(st.secrets)
+    drive = get_drive_service_account(st.secrets) #get_drive_oauth_
 
    
 

@@ -169,7 +169,23 @@ def get_drive_oauth_(secrets):
     drive = GoogleDrive(gauth)
     return drive
 
+def get_drive_service_account(secrets):
+    # Decodificar JSON de cuenta de servicio desde base64
+    token_json_str = base64.b64decode(secrets["service_account"]["token_json_base64"]).decode("utf-8")
+    json_dict = json.loads(token_json_str)
 
+    # Guardarlo temporalmente
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as tmpfile:
+        json.dump(json_dict, tmpfile)
+        tmpfile.flush()
+        service_json_path = tmpfile.name
+
+    # Autenticación
+    gauth = GoogleAuth()
+    gauth.LoadServiceConfigFile(service_json_path)
+    gauth.ServiceAuth()
+
+    return GoogleDrive(gauth)
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
 
