@@ -106,7 +106,7 @@ def setup_drive(session_state):
     return 1
 
 
-def load_sample(session_state, selected_sample):
+def load_sample(session_state, selected_sample, label_list):
     # Check if the selected sample is already downloaded
     img_path = None
     ann_file_path = f"{ann_dir}/{selected_sample}.csv"
@@ -197,7 +197,7 @@ def load_sample(session_state, selected_sample):
     session_state['img_path'] = img_path
     session_state['annotations'] = annotations
 
-    all_points, all_labels = read_results_from_csv(ann_file_path, label_lists)
+    all_points, all_labels = read_results_from_csv(ann_file_path,label_list)
     session_state['all_points'] = all_points
     session_state['all_labels'] = all_labels
 
@@ -321,6 +321,7 @@ def ann_correction(session_state):
 
         # Sidebar selectbox habilitado
         category = st.selectbox("Marcador:", categories,index=0,)
+        
         label_list = label_lists[category]
         colors = category_colors[category]
         #category = 'HER2/neu'
