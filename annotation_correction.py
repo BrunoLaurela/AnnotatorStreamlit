@@ -32,10 +32,10 @@ path_to_json_key = 'token.json'
 
 def setup_drive(session_state):
     try:
-        drive = get_drive(path_to_json_key)
-        client_secrets_str = st.secrets["oauth_client"]["client_secrets"]
+        #drive = get_drive(path_to_json_key)
+        client_secrets_str = st.secrets["TOKEN_JSON_BASE64"]
 
-        #drive = get_drive_oauth(client_secrets_str)
+        drive = get_drive_oauth(client_secrets_str)
     except Exception as e:
         st.error("⚠️ Hubo un problema al inicializar la conexión con Google Drive. Notifica al administrador " f"{e}.")
         return -1
