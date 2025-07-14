@@ -126,7 +126,46 @@ def get_drive_oauth(client_secrets_str, token_json_b64):
 
     drive = GoogleDrive(gauth)
     return drive
+def get_drive_oauth_(secrets):
+    gauth = GoogleAuth()
 
+    client_config = {
+        "installed": {
+            "client_id": secrets["oauth_client"]["client_id"],
+            "client_secret": secrets["oauth_client"]["client_secret"],
+            "redirect_uris": secrets["oauth_client"]["redirect_uris"],
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs"
+        }
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
+        json.dump(client_config, f)
+        f.flush()
+        client_secrets_path = f.name
+
+    gauth.LoadClientConfigFile(client_secrets_path)
+
+    token_json_b64 = secrets["oauth_client"]["token_json_base64"]
+    token_json_str = base64.b64decode(token_json_b64).decode("utf-8")
+
+    creds_path = os.path.join(tempfile.gettempdir(), "mycreds.txt")
+    with open(creds_path, "w") as token_file:
+        token_file.write(token_json_str)
+
+    gauth.LoadCredentialsFile(creds_path)
+
+    if gauth.credentials is None:
+        gauth.LocalWebserverAuth()
+    elif gauth.access_token_expired:
+        gauth.Refresh()
+        gauth.Authorize()
+
+    gauth.SaveCredentialsFile(creds_path)
+
+    drive = GoogleDrive(gauth)
+    return drive
 
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
