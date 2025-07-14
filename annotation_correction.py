@@ -31,21 +31,16 @@ anns_discarded_dir = 'anotaciones_descartadas'
 path_to_json_key = 'token.json'
 
 def setup_drive(session_state):
-    try:
-        #drive = get_drive(path_to_json_key)
-       
-        
-        client_secrets_str = st.secrets["oauth_client"]["client_secrets"]
+    
+    #drive = get_drive(path_to_json_key)
+          
+          
+    #client_secrets_str = st.secrets["oauth_client"]["client_secrets"]
+          
+    #token_json_b64 = st.secrets["oauth_client"]["token_json_base64"]
+    drive = get_drive_oauth_(st.secrets)
 
-        token_json_b64 = st.secrets["oauth_client"]["token_json_base64"]
-        drive = get_drive_oauth_(st.secrets)
-
-    except KeyError:
-        st.error("❌ La clave 'client_secrets ' no está en st.secrets. Revisa tu archivo secrets.toml o la configuración en Streamlit Cloud.")
-        return None
-    except Exception as e:
-        st.error(f"⚠️ Hubo un problema al inicializar la conexión con Google Drive: {e}")
-        return None
+   
 
     # (optional) Get parent folder ID from secrets
     #parent_folder_id = st.secrets["google_drive"].get("parent_folder_id", None)
