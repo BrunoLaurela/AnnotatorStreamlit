@@ -112,6 +112,11 @@ def get_drive_oauth(client_secrets_str, token_json_b64):
     gauth.LoadCredentialsFile(creds_path)
 
     if gauth.credentials is None:
+        # Aquí agregamos para que solicite refresh_token
+        gauth.settings['get_refresh_token'] = True
+        gauth.settings['access_type'] = 'offline'
+        gauth.settings['prompt'] = 'consent'
+
         gauth.LocalWebserverAuth()  # login manual si no hay token
     elif gauth.access_token_expired:
         gauth.Refresh()             # renovar token
@@ -121,6 +126,7 @@ def get_drive_oauth(client_secrets_str, token_json_b64):
 
     drive = GoogleDrive(gauth)
     return drive
+
 
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
