@@ -140,6 +140,8 @@ def get_drive_oauth_(secrets):
         }
     }
 
+    import tempfile, json, base64, os
+
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
         json.dump(client_config, f)
         f.flush()
@@ -166,6 +168,7 @@ def get_drive_oauth_(secrets):
 
     drive = GoogleDrive(gauth)
     return drive
+
 
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
