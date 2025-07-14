@@ -48,11 +48,11 @@ def get_drive(path_to_json):
     
     # Return drive.
     return drive
-def get_drive_oauth(client_secrets_base64_str):
+"""def get_drive_oauth(client_secrets,token_json_b64):
     gauth = GoogleAuth()
 
     # Decodificar base64 a JSON string
-    client_secrets_json = base64.b64decode(client_secrets_base64_str).decode("utf-8")
+    client_secrets_json = base64.b64decode(token_json_b64).decode("utf-8")
 
     # Guardar el JSON decodificado en un archivo temporal
     with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp_file:
@@ -82,7 +82,46 @@ def get_drive_oauth(client_secrets_base64_str):
     gauth.SaveCredentialsFile(creds_path)
 
     drive = GoogleDrive(gauth)
-    return drive    
+    return drive    """
+import base64
+import tempfile
+import os
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+
+def get_drive_oauth(client_secrets_str, token_json_b64):
+    gauth = GoogleAuth()
+
+    # Guardar client_secrets en archivo temporal
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp_file:
+        temp_file.write(client_secrets_str)
+        temp_file.flush()
+        client_secrets_path = temp_file.name
+
+    gauth.LoadClientConfigFile(client_secrets_path)
+
+    # Decodificar token base64
+    token_json_str = base64.b64decode(token_json_b64).decode("utf-8")
+
+    # Guardar token en archivo temporal
+    creds_path = os.path.join(tempfile.gettempdir(), "mycreds.txt")
+    with open(creds_path, "w") as token_file:
+        token_file.write(token_json_str)
+
+    # Intentar cargar credenciales (token)
+    gauth.LoadCredentialsFile(creds_path)
+
+    if gauth.credentials is None:
+        gauth.LocalWebserverAuth()  # login manual si no hay token
+    elif gauth.access_token_expired:
+        gauth.Refresh()             # renovar token
+        gauth.Authorize()
+
+    gauth.SaveCredentialsFile(creds_path)
+
+    drive = GoogleDrive(gauth)
+    return drive
+
 def get_dicts(drive, todo_name, toreview_name, done_name, discarded_name, parent_folder_id=None):
     """Get dictionaries for to-do, to-review, done, and discarded files with metadata.
 
