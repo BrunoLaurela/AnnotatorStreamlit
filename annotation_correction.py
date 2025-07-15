@@ -39,7 +39,7 @@ def setup_drive(session_state):
           
     #token_json_b64 = st.secrets["oauth_client"]["token_json_base64"]
     #drive = get_drive_service_account(st.secrets) #get_drive_oauth_
-    drive = get_drive_oauth_(st.secrets)
+    drive = get_drive_from_secrets(st.secrets)
    
 
     # (optional) Get parent folder ID from secrets

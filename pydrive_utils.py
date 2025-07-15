@@ -7,6 +7,7 @@ import base64
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 
 import tempfile
 
@@ -15,6 +16,18 @@ from google.auth.transport.requests import Request
 import pickle
 
 from googleapiclient.discovery import build
+
+
+import streamlit as st
+import json
+# Importaciones para PyDrive2
+from pydrive2.auth import GoogleAuth
+from pydrive2.drive import GoogleDrive
+from oauth2client.service_account import ServiceAccountCredentials # Necesario para ServiceAccountCredentials
+
+# Importaciones para google-api-python-client (si aún las necesitas para otras APIs, si no, se pueden quitar)
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
@@ -175,142 +188,52 @@ import json
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-st.warning(
-    "**¡ATENCIÓN!** El secreto `token_json_base64` proporcionado no contiene un `refresh_token`.\n\n"
-    "Esto significa que el token de acceso caducará en aproximadamente 1 hora, "
-    "y la aplicación dejará de funcionar hasta que actualices manualmente el secreto "
-    "en Streamlit Cloud con un nuevo token de acceso válido. \n\n"
-    "Para acceso persistente, se recomienda usar una **Cuenta de Servicio** o "
-    "implementar un flujo OAuth 2.0 completo que obtenga un `refresh_token`."
-)
-
-st.title("Streamlit Google Drive Access")
-st.write("Demostración de cómo acceder a Google Drive usando secretos de Streamlit Cloud.")
 
 
-@st.cache_resource
-def get_drive_oauth_(secrets):
+def get_drive_service_account_(_secrets):
     """
-    Inicializa y devuelve el servicio de Google Drive usando credenciales OAuth 2.0
-    cargadas desde los secretos de Streamlit.
+    Inicializa y devuelve el servicio de Google Drive usando una Cuenta de Servicio.
+    Los secretos se cargan directamente de st.secrets.
     """
     try:
-        # 1. Cargar secretos de Streamlit
-        oauth_secrets = secrets["oauth_client"]
-        token_json_base64 = oauth_secrets["token_json_base64"]
-        client_id = oauth_secrets["client_id"]
-        client_secret = oauth_secrets["client_secret"]
-        # redirect_uris = oauth_secrets["redirect_uris"] # No se usa directamente aquí
+        # Cargar las credenciales de la cuenta de servicio desde st.secrets
+        # El JSON de las credenciales está almacenado como una cadena multi-línea en secrets.toml
+        credentials_json_str = _secrets["service_account"]["credentials"]
+        credentials_info = json.loads(credentials_json_str)
 
-        st.success("Secretos de OAuth cargados correctamente.")
+        st.success("Credenciales de Cuenta de Servicio cargadas correctamente.")
 
-        # 2. Decodificar y parsear el JSON del token
-        decoded_token_json = base64.b64decode(token_json_base64).decode('utf-8')
-        token_data = json.loads(decoded_token_json)
-        st.success("Token decodificado y parseado correctamente.")
+        # Definir los scopes necesarios (permisos)
+        # 'https://www.googleapis.com/auth/drive' para acceso completo a Drive
+        # 'https://www.googleapis.com/auth/drive.readonly' para solo lectura
+        SCOPES = ['https://www.googleapis.com/auth/drive']
 
-        # 3. Crear el objeto de Credenciales de Google
-        credentials = Credentials(
-            token=token_data.get('access_token'),
-            refresh_token=token_data.get('refresh_token'),  # Será None si no se obtuvo
-            token_uri=token_data.get('token_uri'),
-            client_id=token_data.get('client_id'),
-            client_secret=token_data.get('client_secret'),
-            scopes=token_data.get('scopes')
+        # Crear el objeto de credenciales de la cuenta de servicio
+        creds = service_account.Credentials.from_service_account_info(
+            credentials_info, scopes=SCOPES
         )
-        st.success("Objeto de credenciales de Google creado.")
+        st.success("Objeto de credenciales de Cuenta de Servicio creado.")
 
-        # 4. Construir el servicio de Google Drive
-        service = build('drive', 'v3', credentials=credentials)
+        # Construir el servicio de Google Drive
+        service = build('drive', 'v3', credentials=creds)
         st.success("Servicio de Google Drive inicializado.")
         return service
 
     except KeyError as e:
-        st.error(f"Error al cargar secretos: {e}. Asegúrate de que tu archivo `secrets.toml` "
-                 "en Streamlit Cloud tenga la sección `[oauth_client]` y las claves necesarias.")
+        st.error(f"Error al cargar secretos de la Cuenta de Servicio: {e}. "
+                 "Asegúrate de que tu `secrets.toml` tenga la sección `[service_account]` "
+                 "y la clave `credentials`.")
+        return None
+    except json.JSONDecodeError as e:
+        st.error(f"Error al decodificar el JSON de las credenciales de la Cuenta de Servicio: {e}. "
+                 "Verifica el formato JSON en tu `secrets.toml`.")
         return None
     except Exception as e:
-        st.error(f"Ocurrió un error al inicializar el servicio de Drive con OAuth: {e}")
-        st.info("Esto podría deberse a un token de acceso caducado o credenciales mal formadas. Por favor, revisa tu secreto.")
+        st.error(f"Ocurrió un error inesperado al inicializar el servicio de Drive con Cuenta de Servicio: {e}")
         return None
 
-def setup_drive(session_state):
-    """
-    Configura el servicio de Google Drive y lo almacena en el estado de la sesión.
-    """
-    if "drive_service" not in session_state or session_state.drive_service is None:
-        st.info("Inicializando servicio de Google Drive...")
-        drive = get_drive_oauth_(st.secrets)
-        session_state.drive_service = drive
-    else:
-        st.success("Servicio de Google Drive ya inicializado en la sesión.")
-    return session_state.drive_service
 
 
-# --- Ejecución principal de la aplicación Streamlit ---
-# Llama a setup_drive para obtener o inicializar el servicio de Drive
-drive_service = setup_drive(st.session_state)
-
-if drive_service:
-    st.header("Operaciones de Google Drive")
-
-    # --- Listar archivos ---
-    st.subheader("Listar Archivos en Mi Drive")
-    if st.button("Listar Archivos"):
-        try:
-            results = drive_service.files().list(
-                pageSize=10, fields="nextPageToken, files(id, name, mimeType)").execute()
-            items = results.get('files', [])
-
-            if not items:
-                st.write('No se encontraron archivos.')
-            else:
-                st.write('Archivos:')
-                for item in items:
-                    st.write(f"- {item['name']} (ID: {item['id']}, Tipo: {item['mimeType']})")
-        except HttpError as error:
-            st.error(f"Ocurrió un error al listar archivos: {error}")
-            st.info("El token podría haber caducado. Actualiza tu secreto `token_json_base64` en `secrets.toml`.")
-        except Exception as e:
-            st.error(f"Ocurrió un error inesperado al listar archivos: {e}")
-
-    # --- Crear un archivo de texto ---
-    st.subheader("Crear un Archivo de Texto")
-    file_name = st.text_input("Nombre del archivo a crear:", "mi_archivo_streamlit.txt")
-    file_content = st.text_area("Contenido del archivo:", "Hola desde Streamlit Cloud y Google Drive!")
-
-    if st.button("Crear Archivo"):
-        try:
-            file_metadata = {'name': file_name, 'mimeType': 'text/plain'}
-            media_body = {'data': file_content, 'mimeType': 'text/plain'}
-
-            file = drive_service.files().create(
-                body=file_metadata,
-                media_body=media_body,
-                fields='id'
-            ).execute()
-            st.success(f"Archivo '{file_name}' creado con ID: {file.get('id')}")
-        except HttpError as error:
-            st.error(f"Ocurrió un error al crear el archivo: {error}")
-            st.info("El token podría haber caducado o no tienes permisos de escritura. Actualiza tu secreto.")
-        except Exception as e:
-            st.error(f"Ocurrió un error inesperado al crear el archivo: {e}")
-
-    # --- Eliminar un archivo (solo para demostración, ¡usar con precaución!) ---
-    st.subheader("Eliminar un Archivo (¡Precaución!)")
-    file_id_to_delete = st.text_input("ID del archivo a eliminar (¡CUIDADO!):")
-    if st.button("Eliminar Archivo", help="Esto eliminará permanentemente el archivo con el ID proporcionado."):
-        if st.checkbox("Confirmar eliminación"):
-            try:
-                drive_service.files().delete(fileId=file_id_to_delete).execute()
-                st.success(f"Archivo con ID '{file_id_to_delete}' eliminado correctamente.")
-            except HttpError as error:
-                st.error(f"Ocurrió un error al eliminar el archivo: {error}")
-                st.info("Asegúrate de que el ID es correcto y tienes permisos de eliminación. El token podría haber caducado.")
-            except Exception as e:
-                st.error(f"Ocurrió un error inesperado al eliminar el archivo: {e}")
-        else:
-            st.warning("Por favor, marca la casilla de confirmación para eliminar el archivo.")
 
 
 """def get_drive_service_account(secrets):
@@ -905,3 +828,176 @@ if __name__ == '__main__':
     print('Root folder ID: {}'.format(about['rootFolderId']))
     print('Total quota (bytes): {}'.format(about['quotaBytesTotal']))
     print('Used quota (bytes): {}'.format(about['quotaBytesUsed']))
+
+
+
+st.title("Acceso a Google Drive con Cuenta de Servicio (usando PyDrive2)")
+st.write("Demostración de cómo acceder a Google Drive usando una Cuenta de Servicio desde secretos de Streamlit Cloud con PyDrive2.")
+
+# --- Instrucciones importantes para el secreto ---
+st.info(
+    "**¡IMPORTANTE!** Para que esta aplicación funcione, tu archivo `.streamlit/secrets.toml` "
+    "debe contener las credenciales de tu Cuenta de Servicio de Google Drive. "
+    "Debe tener una sección `[service_account]` con la clave `credentials` "
+    "que contenga el JSON completo de tu clave de cuenta de servicio."
+    "\n\n**Ejemplo de secrets.toml:**\n"
+    "```toml\n"
+    "[google_drive]\n"
+    "parent_folder_id = \"0AJUJP-MkkGuoUk9PVA\"\n"
+    "\n"
+    "[service_account]\n"
+    "credentials = '''\n"
+    "{\n"
+    "  \"type\": \"service_account\",\n"
+    "  \"project_id\": \"tu-project-id\",\n"
+    "  \"private_key_id\": \"tu-private-key-id\",\n"
+    "  \"private_key\": \"-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----\\n\",\n"
+    "  \"client_email\": \"tu-cuenta-de-servicio@tu-project-id.iam.gserviceaccount.com\",\n"
+    "  \"client_id\": \"tu-client-id\",\n"
+    "  \"auth_uri\": \"[https://accounts.google.com/o/oauth2/auth](https://accounts.google.com/o/oauth2/auth)\",\n"
+    "  \"token_uri\": \"[https://oauth2.googleapis.com/token](https://oauth2.googleapis.com/token)\",\n"
+    "  \"auth_provider_x509_cert_url\": \"[https://www.googleapis.com/oauth2/v1/certs](https://www.googleapis.com/oauth2/v1/certs)\",\n"
+    "  \"client_x509_cert_url\": \"[https://www.googleapis.com/robot/v1/metadata/x509/tu-cuenta-de-servicio%40tu-project-id.iam.gserviceaccount.com](https://www.googleapis.com/robot/v1/metadata/x509/tu-cuenta-de-servicio%40tu-project-id.iam.gserviceaccount.com)\",\n"
+    "  \"universe_domain\": \"googleapis.com\"\n"
+    "}\n"
+    "'''\n"
+    "```\n"
+    "Asegúrate de que la clave de tu cuenta de servicio esté entre tres comillas simples (`'''`) "
+    "para manejar correctamente las nuevas líneas y comillas internas."
+)
+
+
+@st.cache_resource
+def get_drive_from_secrets(_secrets): # Cambiado el nombre de la función y el argumento para cache
+    """
+    Obtiene la instancia de GoogleDrive de PyDrive2 utilizando las credenciales
+    de la cuenta de servicio directamente desde los secretos de Streamlit.
+    """
+    try:
+        # Cargar las credenciales de la cuenta de servicio desde st.secrets
+        credentials_json_str = _secrets["service_account"]["credentials"]
+        credentials_info = json.loads(credentials_json_str)
+
+        st.success("Credenciales de Cuenta de Servicio cargadas correctamente.")
+
+        # Set scope. This particular choice makes sure to give full access.
+        scope = ["https://www.googleapis.com/auth/drive"]
+
+        # Authorization instance.
+        gauth = GoogleAuth()
+        gauth.auth_method = 'service'
+        # Usar from_json_keyfile_dict para pasar el diccionario directamente
+        gauth.credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+            credentials_info,
+            scope
+        )
+
+        # Get drive.
+        drive = GoogleDrive(gauth)
+        st.success("Instancia de GoogleDrive (PyDrive2) inicializada.")
+        return drive
+
+    except KeyError as e:
+        st.error(f"Error al cargar secretos de la Cuenta de Servicio: {e}. "
+                 "Asegúrate de que tu `secrets.toml` tenga la sección `[service_account]` "
+                 "y la clave `credentials`.")
+        return None
+    except json.JSONDecodeError as e:
+        st.error(f"Error al decodificar el JSON de las credenciales de la Cuenta de Servicio: {e}. "
+                 "Verifica el formato JSON en tu `secrets.toml`.")
+        return None
+    except Exception as e:
+        st.error(f"Ocurrió un error inesperado al inicializar el servicio de Drive con Cuenta de Servicio: {e}")
+        return None
+
+def setup_drive(session_state):
+    """
+    Configura el servicio de Google Drive (usando PyDrive2) y lo almacena en el estado de la sesión.
+    Utiliza la autenticación de Cuenta de Servicio.
+    """
+    if "drive_instance" not in session_state or session_state.drive_instance is None:
+        st.info("Inicializando servicio de Google Drive (PyDrive2) con Cuenta de Servicio...")
+        # Llama a la función que usa la cuenta de servicio
+        drive = get_drive_from_secrets(st.secrets)
+        session_state.drive_instance = drive # Almacenar la instancia de PyDrive2
+    else:
+        st.success("Servicio de Google Drive (PyDrive2) ya inicializado en la sesión.")
+    return session_state.drive_instance
+
+
+# --- Ejecución principal de la aplicación Streamlit ---
+# Llama a setup_drive para obtener o inicializar el servicio de Drive
+drive_instance = setup_drive(st.session_state)
+
+# Obtener el ID de la carpeta padre desde los secretos
+try:
+    PARENT_FOLDER_ID = st.secrets["google_drive"]["parent_folder_id"]
+    st.info(f"ID de la carpeta padre configurado: `{PARENT_FOLDER_ID}`")
+except KeyError:
+    st.warning("No se encontró 'parent_folder_id' en la sección '[google_drive]' de `secrets.toml`. "
+               "Algunas operaciones podrían no funcionar correctamente.")
+    PARENT_FOLDER_ID = None
+
+
+if drive_instance:
+    st.header("Operaciones de Google Drive (usando PyDrive2)")
+
+    # --- Listar archivos ---
+    st.subheader("Listar Archivos en Mi Drive")
+    if st.button("Listar Archivos"):
+        try:
+            # PyDrive2 usa un formato de consulta diferente (q)
+            # Para listar todos los archivos:
+            # file_list = drive_instance.ListFile({'q': "'root' in parents and trashed=false"}).GetList()
+            # Para listar archivos en una carpeta específica:
+            query = f"'{PARENT_FOLDER_ID}' in parents and trashed=false" if PARENT_FOLDER_ID else "'root' in parents and trashed=false"
+            file_list = drive_instance.ListFile({'q': query}).GetList()
+
+
+            if not file_list:
+                st.write('No se encontraron archivos.')
+            else:
+                st.write('Archivos:')
+                for file_item in file_list:
+                    st.write(f"- {file_item['title']} (ID: {file_item['id']}, Tipo: {file_item['mimeType']})")
+        except Exception as e:
+            st.error(f"Ocurrió un error al listar archivos: {e}")
+            st.info("Asegúrate de que la cuenta de servicio tiene permisos de lectura en Drive.")
+
+    # --- Crear un archivo de texto ---
+    st.subheader("Crear un Archivo de Texto")
+    file_name = st.text_input("Nombre del archivo a crear:", "mi_archivo_streamlit_pydrive.txt")
+    file_content = st.text_area("Contenido del archivo:", "Hola desde Streamlit Cloud con PyDrive2!")
+
+    if st.button("Crear Archivo"):
+        try:
+            # Crear un nuevo archivo de PyDrive2
+            file_obj = drive_instance.CreateFile({'title': file_name, 'mimeType': 'text/plain'})
+            file_obj.SetContentString(file_content)
+
+            if PARENT_FOLDER_ID:
+                file_obj['parents'] = [{'id': PARENT_FOLDER_ID}]
+
+            file_obj.Upload() # Subir el archivo
+            st.success(f"Archivo '{file_name}' creado con ID: {file_obj['id']}")
+            if PARENT_FOLDER_ID:
+                st.info(f"Creado en la carpeta con ID: `{PARENT_FOLDER_ID}`")
+        except Exception as e:
+            st.error(f"Ocurrió un error al crear el archivo: {e}")
+            st.info("Asegúrate de que la cuenta de servicio tiene permisos de escritura en la carpeta especificada en Drive.")
+
+    # --- Eliminar un archivo (solo para demostración, ¡usar con precaución!) ---
+    st.subheader("Eliminar un Archivo (¡Precaución!)")
+    file_id_to_delete = st.text_input("ID del archivo a eliminar (¡CUIDADO!):")
+    if st.button("Eliminar Archivo", help="Esto eliminará permanentemente el archivo con el ID proporcionado."):
+        if st.checkbox("Confirmar eliminación"):
+            try:
+                # Obtener el archivo por ID y luego eliminarlo
+                file_to_delete = drive_instance.CreateFile({'id': file_id_to_delete})
+                file_to_delete.Delete()
+                st.success(f"Archivo con ID '{file_id_to_delete}' eliminado correctamente.")
+            except Exception as e:
+                st.error(f"Ocurrió un error al eliminar el archivo: {e}")
+                st.info("Asegúrate de que el ID es correcto y la cuenta de servicio tiene permisos de eliminación.")
+        else:
+            st.warning("Por favor, marca la casilla de confirmación para eliminar el archivo.")
