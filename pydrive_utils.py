@@ -747,7 +747,7 @@ def upload_file_to_gdrive(drive, file_path, folder_id):
         ID of the destination directory in Google Drive.
     """
     file_name = os.path.basename(file_path)
-    gfile = drive.CreateFile({'title': file_name, 'parents': [{'id': folder_id}]})
+    gfile = drive.CreateFile({'title': file_name, 'parents': [{'id': folder_id}],'supportsAllDrives': True})
     gfile.SetContentFile(file_path)
     gfile.Upload(param={'supportsAllDrives': True})
     
