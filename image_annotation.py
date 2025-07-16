@@ -34,9 +34,9 @@ Ki67_colors = [
     "#167AAC"   # No importante (azul)
 ]
 ERPR_colors = [
-    "#A2E700", # + (verdoso)
-    "#FF7700", # ++ (naranja) 
     "#FF0000",  # +++ (Rojo)
+    "#FF7700", # ++ (naranja) 
+    "#A2E700", # + (verdoso)
     "#1100FF",  # Negativo (azul)
     "#898989"   # No importa (Gris)
        
