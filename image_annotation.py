@@ -532,15 +532,13 @@ def image_ann(session_state):
                     csv_reader = csv.DictReader(uploaded_csv.read().decode("utf-8").splitlines())
                     manual_points = []
                     manual_labels = {}
-                    mapa = {
-                        label: "Positivo+++" if "positivo" in label.lower() else label
-                        for label in label_list
-                        }
+                    mapa = {'Positivo': 'Positivo+++', 'Negativo': 'Negativo','Positivo+++' :'Positivo+++','Positivo++':'Positivo++'
+                            ,'Positivo+':'Positivo+','No importante':'No importante'}
                     for row in csv_reader:
                         x = int(float(row["x_coords"]))
                         y = int(float(row["y_coords"]))
                         label_original = row["Labels"].strip()
-                        label = mapa.get(label_original, label_original)
+                        label = mapa.get(label_original)
 
                         label_id = label_list.index(label)
                         point_tuple = (x, y)
