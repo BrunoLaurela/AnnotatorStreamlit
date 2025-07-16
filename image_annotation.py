@@ -521,7 +521,43 @@ def image_ann(session_state):
         try:
             all_points = session_state['all_points']
             all_labels = session_state['all_labels']
+            # cargar anotaciones desde CSV local manualmente
+           
+            uploaded_csv = st.file_uploader("Cargar anotaciones desde un archivo CSV", type=["csv"])
 
+            if uploaded_csv is not None:
+                try:
+                    import csv
+
+                    csv_reader = csv.DictReader(uploaded_csv.read().decode("utf-8").splitlines())
+                    manual_points = []
+                    manual_labels = {}
+                    mapa = {
+                        label: "Positivo+++" if "positivo" in label.lower() else label
+                        for label in label_list
+                        }
+                    for row in csv_reader:
+                        x = int(float(row["x_coords"]))
+                        y = int(float(row["y_coords"]))
+                        label_original = row["Label"].strip()
+                        label = mapa.get(label_original, label_original)
+
+                        label_id = label_list.index(label)
+                        point_tuple = (x, y)
+                        manual_points.append(point_tuple)
+                        manual_labels[point_tuple] = label_id
+
+                    st.success("✅ Anotaciones cargadas correctamente desde el CSV local.")
+
+                    # Sobrescribimos los datos
+                    all_points = manual_points
+                    all_labels = manual_labels
+                    session_state['all_points'] = all_points
+                    session_state['all_labels'] = all_labels
+                    update_patch_data(session_state, all_points, all_labels)
+
+                except Exception as e:
+                    st.error(f"❌ Error al leer el archivo: {e}")
             # Translate the selected action
             action = session_state['action']
             if action == actions[1]:
