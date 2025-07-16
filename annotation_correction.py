@@ -69,8 +69,8 @@ def setup_drive(session_state):
         gauth = GoogleAuth()
         gauth.credentials = ServiceAccountCredentials.from_json_keyfile_name(
             temp.name,
-            scopes=["https://www.googleapis.com/auth/drive"]
-            subject  =st.secrets["google_service_account"]["client_email"]
+            scopes=["https://www.googleapis.com/auth/drive"],
+            subject  = st.secrets["google_service_account"]["client_email"]
         )
     drive = GoogleDrive(gauth)
     # (optional) Get parent folder ID from secrets
