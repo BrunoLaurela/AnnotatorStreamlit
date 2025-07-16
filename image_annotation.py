@@ -21,7 +21,7 @@ report_dir = "./reports"
 categories = ['HER2/neu', 'Ki67', 'ER/PR']
 label_lists = {
     'Ki67': ['Positivo', 'Negativo', 'No importante'],
-    'ER/PR': ['Positivo+++', 'Positivo++','Positivo+', 'No importante',  'Negativo'],
+    'ER/PR': ['Positivo++','Positivo+','Positivo+++', 'No importante',  'Negativo'],
     'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
 }
 
@@ -35,7 +35,7 @@ Ki67_colors = [
 ]
 ERPR_colors = [
     "#A2E700", # + (verdoso)
-    "#E1610B", # ++ (naranja) 
+    "#FF7700", # ++ (naranja) 
     "#FF0000",  # +++ (Rojo)
     "#1100FF",  # Negativo (azul)
     "#898989"   # No importa (Gris)
