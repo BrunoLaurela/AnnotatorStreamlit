@@ -21,7 +21,7 @@ report_dir = "./reports"
 categories = ['HER2/neu', 'Ki67', 'ER/PR']
 label_lists = {
     'Ki67': ['Positivo', 'Negativo', 'No importante'],
-    'ER/PR': ['Positivo+', 'Positivo++', 'Positivo+++', 'Negativo', 'No importante'],
+    'ER/PR': ['Positivo+++', 'Positivo++','Positivo+', 'No importante',  'Negativo'],
     'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
 }
 
@@ -35,10 +35,10 @@ Ki67_colors = [
 ]
 ERPR_colors = [
     "#A2E700", # + (verdoso)
-    "#F06D17", # ++ (naranja) 
+    "#E1610B", # ++ (naranja) 
     "#FF0000",  # +++ (Rojo)
     "#1100FF",  # Negativo (azul)
-    "#999999"   # No importa (Gris)
+    "#898989"   # No importa (Gris)
        
 ]
 her2_colors = [
@@ -204,7 +204,7 @@ def update_annotations(new_labels, all_points, all_labels, session_state):
         patch_points.append([x, y])
 
         point_tuple = (x, y)
-
+        #print(type(all_points))
         if point_tuple not in all_points:
             all_points.append(point_tuple)
             all_labels[point_tuple] = label_id  # Store the label for this point
@@ -394,9 +394,7 @@ def read_results_from_csv(csv_filename, label_list):
                 y = int(row["Y"])
                 label = row["Label"].strip()
                 label_id = label_list.index(label)
-                print(f"Etiqueta leída: '{label}'")
-                print(f"Etiqueta ID: {label_id}")
-                print(f"Coordenadas: ({x}, {y})")
+                
                 point_tuple = (x, y)
 
                 all_points.append(point_tuple)
@@ -585,6 +583,7 @@ def image_ann(session_state):
             label_colors = {label: color for label, color in zip(label_list, colors)}
         else:
             label_colors = get_colormap(label_list)
+        
         print("label_list:", label_list)
         print("label_colors:", label_colors)
         for i, label in enumerate(label_list):
