@@ -47,32 +47,23 @@ def setup_drive(session_state):
     #drive = get_drive_service_account(st.secrets) #get_drive_oauth_
     #drive = get_drive_from_secrets(st.secrets)
    
-    service_account_info = {
-        "type": st.secrets["google_service_account"]["type"],
-        "project_id": st.secrets["google_service_account"]["project_id"],
-        "private_key_id": st.secrets["google_service_account"]["private_key_id"],
-        "private_key": st.secrets["google_service_account"]["private_key"],
-        "client_email": st.secrets["google_service_account"]["client_email"],
-        "client_id": st.secrets["google_service_account"]["client_id"],
-        "auth_uri": st.secrets["google_service_account"]["auth_uri"],
-        "token_uri": st.secrets["google_service_account"]["token_uri"],
-        "auth_provider_x509_cert_url": st.secrets["google_service_account"]["auth_provider_x509_cert_url"],
-        "client_x509_cert_url": st.secrets["google_service_account"]["client_x509_cert_url"],
-        "universe_domain": st.secrets["google_service_account"]["universe_domain"],
-    }
+    service_account_info = dict(st.secrets["google_service_account"])
 
-    # 2. Guardar en un archivo temporal para usarlo con PyDrive2
+    # Guardar en archivo temporal
     with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".json") as temp:
         json.dump(service_account_info, temp)
         temp.flush()
-        
+
         gauth = GoogleAuth()
-        gauth.credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(
             temp.name,
-            scopes=["https://www.googleapis.com/auth/drive"],
-            subject  = st.secrets["google_service_account"]["client_email"]
+            scopes=["https://www.googleapis.com/auth/drive"]
         )
+        gauth.credentials = credentials
+
     drive = GoogleDrive(gauth)
+
+    session_state['drive'] = drive
     # (optional) Get parent folder ID from secrets
     #parent_folder_id = st.secrets["google_drive"].get("parent_folder_id", None)
 
