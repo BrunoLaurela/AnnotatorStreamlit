@@ -21,7 +21,7 @@ report_dir = "./reports"
 categories = ['HER2/neu', 'Ki67', 'ER/PR']
 label_lists = {
     'Ki67': ['Positivo', 'Negativo', 'No importante'],
-    'ER/PR': ['Positivo+++','Positivo++','Positivo+','No importante','Negativo'],
+    'ER/PR': ['Positivo+++','Positivo++','Positivo+','Negativo','No importante'],
     'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
 }
 
@@ -35,12 +35,14 @@ Ki67_colors = [
 ]
 ERPR_colors = [
     "#FF0000",  # +++ (Rojo)
-    "#FF7700", # ++ (naranja) 
-    "#A2E700", # + (verdoso)
-    "#1100FF",  # Negativo (azul)
-    "#898989"   # No importa (Gris)
+    "#FFF824", # ++ (naranja) 
+    "#4BF564", # + (verdoso)
+    "#00FFF7",  # Negativo (azul)
+    "#3700FF"   # No importa (Gris)
        
 ]
+
+
 her2_colors = [
     "#FF0000",  # Completa 3+ (Rojo)
     "#FF00FF",  # Completa 2+ (Fucsia)
@@ -204,7 +206,6 @@ def update_annotations(new_labels, all_points, all_labels, session_state):
         patch_points.append([x, y])
 
         point_tuple = (x, y)
-        print("type: ",type(all_points))
         if point_tuple not in all_points:
             all_points.append(point_tuple)
             all_labels[point_tuple] = label_id  # Store the label for this point
@@ -513,8 +514,12 @@ def image_ann(session_state):
         with col2:
             category = st.selectbox("Categoría:", categories)
             session_state['label'] = st.selectbox("Clase:", label_lists[category])
+
             label_list = label_lists[category]
             colors = category_colors[category]
+           
+            print("label_list:", label_list,   
+                  "colors:", colors)
     image_file_name, img_path = get_image(session_state,label_list)
 
     if image_file_name is not None:
@@ -522,7 +527,7 @@ def image_ann(session_state):
             all_points = session_state['all_points']
             all_labels = session_state['all_labels']
             # cargar anotaciones desde CSV local manualmente
-           
+            """
             uploaded_csv = st.file_uploader("Cargar anotaciones desde un archivo CSV", type=["csv"])
 
             if uploaded_csv is not None:
@@ -537,9 +542,9 @@ def image_ann(session_state):
                     for row in csv_reader:
                         x = int(float(row["x_coords"]))
                         y = int(float(row["y_coords"]))
-                        label_original = row["Labels"].strip()
+                        label_original = row["labels"].strip()
                         label = mapa.get(label_original)
-
+                        print("label:", label)
                         label_id = label_list.index(label)
                         point_tuple = (x, y)
                         manual_points.append(point_tuple)
@@ -555,7 +560,7 @@ def image_ann(session_state):
                     update_patch_data(session_state, all_points, all_labels)
 
                 except Exception as e:
-                    st.error(f"❌ Error al leer el archivo: {e}")
+                    st.error(f"❌ Error al leer el archivo: {e}")"""
             # Translate the selected action
             action = session_state['action']
             if action == actions[1]:
@@ -577,7 +582,7 @@ def image_ann(session_state):
 
 
         update_patch_data(session_state, all_points, all_labels)
-                    
+         
         # Use pointdet to annotate the image
         new_labels = pointdet(
             image=session_state['resized_image'],
@@ -594,7 +599,7 @@ def image_ann(session_state):
             point_width=5*point_vis,
             zoom=zoom,
         )
-        print("all_labels", "all_points", all_labels, all_points)
+        #print("all_labels", "all_points", all_labels, all_points)
         # Update points and labels in session state if any changes are made
         if new_labels is not None:
             
