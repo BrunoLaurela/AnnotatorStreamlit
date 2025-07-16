@@ -21,7 +21,7 @@ report_dir = "./reports"
 categories = ['HER2/neu', 'Ki67', 'ER/PR']
 label_lists = {
     'Ki67': ['Positivo', 'Negativo', 'No importante'],
-    'ER/PR': ['Positivo++','Positivo+','Positivo+++', 'No importante',  'Negativo'],
+    'ER/PR': ['Positivo+++','Positivo++','Positivo+','Negativo','No importante'],
     'HER2/neu': ['Completa 3+', 'Completa 2+', 'Completa 1+', 'Incompleta 2+', 'Incompleta 1+', 'Ausente', 'No importa']
 }
 
@@ -60,7 +60,7 @@ category_colors = {
 
 def init_session(session_state):
 
-    session_state['all_points'] = set()  # Set to track unique point
+    session_state['all_points'] = list()  # Set to track unique point
     session_state['all_labels'] = {}  # Dictionary to track labels for each unique point
     session_state['points'] = []
     session_state['labels'] = []
@@ -204,7 +204,7 @@ def update_annotations(new_labels, all_points, all_labels, session_state):
         patch_points.append([x, y])
 
         point_tuple = (x, y)
-        #print(type(all_points))
+        print("type: ",type(all_points))
         if point_tuple not in all_points:
             all_points.append(point_tuple)
             all_labels[point_tuple] = label_id  # Store the label for this point
@@ -560,7 +560,7 @@ def image_ann(session_state):
             point_width=5*point_vis,
             zoom=zoom,
         )
-        
+        print("all_labels", "all_points", all_labels, all_points)
         # Update points and labels in session state if any changes are made
         if new_labels is not None:
             
@@ -584,8 +584,9 @@ def image_ann(session_state):
         else:
             label_colors = get_colormap(label_list)
         
-        print("label_list:", label_list)
-        print("label_colors:", label_colors)
+        """print("label_list:", label_list)
+        print("label_colors:", label_colors)"""
+        
         for i, label in enumerate(label_list):
             ax.scatter(i, 0, color=label_colors[label], s=50)
             ax.text(i, -0.1, label, ha='center', va='top', fontsize=7)
