@@ -563,7 +563,7 @@ def image_ann(session_state):
         
         # Update points and labels in session state if any changes are made
         if new_labels is not None:
-
+            
             # Incorporate the new labels
             all_points, all_labels = update_annotations(new_labels, all_points, all_labels, session_state)
 
