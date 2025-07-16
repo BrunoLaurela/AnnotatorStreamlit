@@ -539,7 +539,7 @@ def image_ann(session_state):
                     for row in csv_reader:
                         x = int(float(row["x_coords"]))
                         y = int(float(row["y_coords"]))
-                        label_original = row["Label"].strip()
+                        label_original = row["Labels"].strip()
                         label = mapa.get(label_original, label_original)
 
                         label_id = label_list.index(label)
